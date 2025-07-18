@@ -1,5 +1,5 @@
 import express from 'express';
-import sweph from './lib/sweph.js';
+import sweph from './index.mjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
