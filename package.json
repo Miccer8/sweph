@@ -41,10 +41,13 @@
 	"scripts": {
 		"preinstall": "node -e \"const { readdirSync, readFileSync, writeFileSync } = require('fs'); const file = readdirSync('./src/functions').map((x,i) => readFileSync('./src/functions/' + x, 'utf8').replace(/args/g, 'args' + i).replace('#include <sweph.h>', '')).reduce((a,b) => a + b, '#include <sweph.h>'); writeFileSync('./src/functions.cpp', file, 'utf8');\"",
 		"install": "node-gyp rebuild && npm run test",
-		"test": "node -e \"const s = require('./'); const c = s.calc(2222222,0,4); console.log('OK')\""
+		"test": "node -e \"const s = require('./'); const c = s.calc(2222222,0,4); console.log('OK')\"",
+		"start": "node server.js"
+
 	},
 	"dependencies": {
 		"node-addon-api": "^8.3.1"
+		 "express": "^4.18.2"
 	},
 	"devDependencies": {
 		"eslint": "^9.27.0"
