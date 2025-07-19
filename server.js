@@ -11,7 +11,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Percorso alla cartella ephe
-sweph.swe_set_ephe_path(path.join(__dirname, 'ephe'));
+sweph.set_ephe_path(path.join(__dirname, 'ephe'));
 
 app.get('/', (req, res) => {
   res.send('✅ Swiss Ephemeris server online');
