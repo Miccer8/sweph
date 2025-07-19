@@ -4,8 +4,6 @@ import sweph from './index.mjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-console.log('sweph keys:', Object.keys(sweph));
-
 const app = express();
 app.use(cors());
 const port = process.env.PORT || 3000;
@@ -30,7 +28,7 @@ app.get('/transit', (req, res) => {
     return res.status(400).json({ error: 'Missing datetime parameter (ISO format)' });
   }
 
-  const jd = sweph.swe_julday(
+  const jd = sweph.julday(
     new Date(datetime).getUTCFullYear(),
     new Date(datetime).getUTCMonth() + 1,
     new Date(datetime).getUTCDate(),
