@@ -139,7 +139,7 @@ if (
 
 planetPositions[name] = result.data[0];
 
-
+}
 
   const houseData = sweph.houses(jd, latitude, longitude, 'P');
   const cusps = houseData.house;
