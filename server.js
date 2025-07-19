@@ -62,7 +62,7 @@ if (ipl === undefined) {
 app.post('/transit', (req, res) => {
   const { jd = 2458849.5, planet = 'SE_SUN' } = req.body;
 
-  const flag = sweph.SEFLG_SWIEPH;
+  const flag = sweph.constants.SEFLG_SWIEPH;
   const ipl = sweph.constants[planet];
 
   if (!ipl) {
