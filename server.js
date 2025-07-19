@@ -78,6 +78,67 @@ app.post('/transit', (req, res) => {
   res.json({ planet, jd, position: result.x });
 });
 
+// 📌 Endpoint POST: /chart – calcolo carta completa
+app.post('/chart', (req, res) => {
+  const { datetime, latitude, longitude } = req.body;
+
+  if (!datetime || latitude === undefined || longitude === undefined) {
+    return res.status(400).json({ error: 'Missing datetime, latitude or longitude' });
+  }
+
+  const date = new Date(datetime);
+  const jd = sweph.julday(
+    date.getUTCFullYear(),
+    date.getUTCMonth() + 1,
+    date.getUTCDate(),
+    date.getUTCHours() + date.getUTCMinutes() / 60,
+    1
+  );
+
+  const flag = sweph.SEFLG_SWIEPH;
+
+  const planets = {
+    Sole: 'SE_SUN',
+    Luna: 'SE_MOON',
+    Mercurio: 'SE_MERCURY',
+    Venere: 'SE_VENUS',
+    Marte: 'SE_MARS',
+    Giove: 'SE_JUPITER',
+    Saturno: 'SE_SATURN',
+    Urano: 'SE_URANUS',
+    Nettuno: 'SE_NEPTUNE',
+    Plutone: 'SE_PLUTO',
+    Chirone: 'SE_CHIRON',
+    'Nodo Nord': 'SE_TRUE_NODE',
+    Lilith: 'SE_MEAN_APOG'
+  };
+
+  const planetPositions = {};
+
+  for (const [name, code] of Object.entries(planets)) {
+    const ipl = sweph.constants[code];
+    const result = sweph.calc_ut(jd, ipl, flag);
+    if (result.rc < 0) {
+      return res.status(500).json({ error: `Errore calcolando ${name}` });
+    }
+    planetPositions[name] = result.x[0]; // Grado zodiacale
+  }
+
+  const houseData = sweph.houses(jd, latitude, longitude, 'P');
+  const cusps = houseData.house;
+  const asc = cusps[0];
+  const mc = cusps[9];
+
+  res.json({
+    jd,
+    planets: planetPositions,
+    houses: cusps,
+    ascendant: asc,
+    mediumCoeli: mc
+  });
+});
+
+
 app.listen(port, () => {
   console.log(`✅ Server running on port ${port}`);
 });
