@@ -33,7 +33,7 @@ app.get('/transit', (req, res) => {
     new Date(datetime).getUTCMonth() + 1,
     new Date(datetime).getUTCDate(),
     new Date(datetime).getUTCHours() + new Date(datetime).getUTCMinutes() / 60,
-    sweph.SE_GREG_CAL
+    1
   );
 
   const flag = sweph.SEFLG_SWIEPH;
