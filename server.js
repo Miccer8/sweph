@@ -1,12 +1,16 @@
-const express = require('express');
-const sweph = require('./index.js');
-const path = require('path');
+import express from 'express';
+import sweph from './index.mjs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const app = express();
 const port = process.env.PORT || 3000;
-
 app.use(express.json());
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Percorso alla cartella ephe
 sweph.swe_set_ephe_path(path.join(__dirname, 'ephe'));
 
 app.get('/', (req, res) => {
@@ -29,11 +33,7 @@ app.post('/transit', (req, res) => {
     return res.status(500).json({ error: result.error });
   }
 
-  res.json({
-    planet,
-    jd,
-    position: result.x
-  });
+  res.json({ planet, jd, position: result.x });
 });
 
 app.listen(port, () => {
