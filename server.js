@@ -36,12 +36,12 @@ app.get('/transit', (req, res) => {
     1
   );
 
-  const flag = sweph.SEFLG_SWIEPH;
-  const ipl = sweph[planet];
+  const ipl = sweph.constants?.[planet];
 
-  if (!ipl) {
-    return res.status(400).json({ error: 'Invalid planet name' });
-  }
+if (ipl === undefined) {
+  return res.status(400).json({ error: `Invalid planet name: ${planet}` });
+}
+
 
   const result = sweph.swe_calc_ut(jd, ipl, flag);
 
