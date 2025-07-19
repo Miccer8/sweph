@@ -326,4 +326,4 @@ const constants = {
   SEMOD_DELTAT_DEFAULT: exports.SEMOD_DELTAT_STEPHENSON_ETC_2016,
 };
 
-export default constants;
+export default exports;
