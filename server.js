@@ -95,7 +95,9 @@ app.post('/chart', (req, res) => {
     1
   );
 
-  const flag = sweph.SEFLG_SWIEPH;
+  const flag = sweph.constants.SEFLG_SWIEPH;
+  console.log("🧪 FLAG VALUE:", flag);
+
 
   const planets = {
     Sole: 'SE_SUN',
