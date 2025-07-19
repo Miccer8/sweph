@@ -126,12 +126,18 @@ app.post('/chart', (req, res) => {
 
   const result = sweph.calc_ut(jd, ipl, flag);
 
-  if (!result || !Array.isArray(result.data) || typeof result.data[0] !== 'number') {
-    console.error(`❌ Posizione non valida per ${name}:`, result);
+  if (
+    !result ||
+    typeof result.rc !== 'number' ||
+    result.rc < 0 ||
+    !Array.isArray(result.x) ||
+    typeof result.x[0] !== 'number'
+  ) {
+    console.error(`❌ Errore o risultato malformato per ${name}:`, result);
     continue;
   }
 
-  planetPositions[name] = result.data[0];
+  planetPositions[name] = result.x[0]; // ✅ finalmente corretto
 }
 
 
