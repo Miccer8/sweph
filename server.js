@@ -69,7 +69,7 @@ app.post('/transit', (req, res) => {
     return res.status(400).json({ error: 'Invalid planet name' });
   }
 
-  const result = sweph.swe_calc_ut(jd, ipl, flag);
+  const result = sweph.calc_ut(jd, ipl, flag);
 
   if (result.rc < 0) {
     return res.status(500).json({ error: result.error });
