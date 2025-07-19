@@ -1,5 +1,5 @@
 import { createRequire } from "module";
-import c from "./constants.js";
+import c from "./constants.cjs";
 
 const require = createRequire(import.meta.url);
 export const sweph = require("./build/Release/sweph.node");
