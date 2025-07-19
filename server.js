@@ -4,6 +4,8 @@ import sweph from './index.mjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+console.log('sweph keys:', Object.keys(sweph));
+
 const app = express();
 app.use(cors());
 const port = process.env.PORT || 3000;
