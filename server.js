@@ -42,6 +42,7 @@ if (ipl === undefined) {
   return res.status(400).json({ error: `Invalid planet name: ${planet}` });
 }
 
+  const flag = sweph.constants.SEFLG_SWIEPH;
 
   const result = sweph.swe_calc_ut(jd, ipl, flag);
 
