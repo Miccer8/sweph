@@ -120,19 +120,20 @@ app.post('/chart', (req, res) => {
   for (const [name, code] of Object.entries(planets)) {
   const ipl = sweph.constants?.[code];
   if (typeof ipl !== 'number') {
-    console.error(`❌ Costante non valida per ${name}: ${code}`);
-    continue; // salta questo pianeta
+    console.error(`❌ Costante non valida per ${name}:`, code);
+    continue;
   }
 
   const result = sweph.calc_ut(jd, ipl, flag);
 
-  if (!result || typeof result.data?.[0] !== 'number') {
-    console.error(`❌ Risultato non valido per ${name}:`, result);
-    continue; // salta questo pianeta
+  if (!result || !Array.isArray(result.data) || typeof result.data[0] !== 'number') {
+    console.error(`❌ Posizione non valida per ${name}:`, result);
+    continue;
   }
 
   planetPositions[name] = result.data[0];
 }
+
 
   const houseData = sweph.houses(jd, latitude, longitude, 'P');
   const cusps = houseData.house;
