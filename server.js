@@ -126,12 +126,12 @@ app.post('/chart', (req, res) => {
 
   const result = sweph.calc_ut(jd, ipl, flag);
 
-  if (!result || typeof result.x?.[0] !== 'number') {
+  if (!result || typeof result.data?.[0] !== 'number') {
     console.error(`❌ Risultato non valido per ${name}:`, result);
     continue; // salta questo pianeta
   }
 
-  planetPositions[name] = result.x[0];
+  planetPositions[name] = result.data[0];
 }
 
   const houseData = sweph.houses(jd, latitude, longitude, 'P');
