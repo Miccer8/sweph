@@ -28,16 +28,17 @@
   "main": "index.js",
   "types": "./index.d.ts",
   "files": [
-    "./index.js",
-    "./index.mjs",
-    "./index.d.ts",
-    "./constants.js",
-    "./binding.gyp",
-    "./swisseph",
-    "./src/functions",
-    "./src/sweph.cpp",
-    "./src/sweph.h"
-  ],
+  "./index.js",
+  "./index.mjs",
+  "./index.d.ts",
+  "./constants.js",
+  "./binding.gyp",
+  "./swisseph",
+  "./src/functions",
+  "./src/sweph.cpp",
+  "./src/sweph.h",
+  "./ephe"
+],
   "scripts": {
     "preinstall": "node -e \"const { readdirSync, readFileSync, writeFileSync } = require('fs'); const file = readdirSync('./src/functions').map((x,i) => readFileSync('./src/functions/' + x, 'utf8').replace(/args/g, 'args' + i).replace('#include <sweph.h>', '')).reduce((a,b) => a + b, '#include <sweph.h>'); writeFileSync('./src/functions.cpp', file, 'utf8');\"",
     "install": "node-gyp rebuild && npm run test",
