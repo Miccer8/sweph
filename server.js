@@ -1,17 +1,12 @@
-import express from 'express';
-import sweph from './index.mjs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+const express = require('express');
+const sweph = require('./index.js');
+const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
 app.use(express.json());
 
-// Ottieni percorso assoluto (compatibile con ES Module)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Imposta il path dei file .se1 necessari per i calcoli
 sweph.swe_set_ephe_path(path.join(__dirname, 'ephe'));
 
 app.get('/', (req, res) => {
