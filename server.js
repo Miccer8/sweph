@@ -126,19 +126,19 @@ app.post('/chart', (req, res) => {
 
   const result = sweph.calc_ut(jd, ipl, flag);
 
-  if (
-    !result ||
-    typeof result.rc !== 'number' ||
-    result.rc < 0 ||
-    !Array.isArray(result.x) ||
-    typeof result.x[0] !== 'number'
-  ) {
-    console.error(`❌ Errore o risultato malformato per ${name}:`, result);
-    continue;
-  }
-
-  planetPositions[name] = result.x[0]; // ✅ finalmente corretto
+if (
+  !result ||
+  typeof result.rc !== 'number' ||
+  result.rc < 0 ||
+  !Array.isArray(result.data) ||
+  typeof result.data[0] !== 'number'
+) {
+  console.error(`❌ Errore o risultato malformato per ${name}:`, result);
+  continue;
 }
+
+planetPositions[name] = result.data[0];
+
 
 
   const houseData = sweph.houses(jd, latitude, longitude, 'P');
