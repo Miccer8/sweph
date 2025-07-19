@@ -62,7 +62,7 @@ app.post('/transit', (req, res) => {
   const { jd = 2458849.5, planet = 'SE_SUN' } = req.body;
 
   const flag = sweph.SEFLG_SWIEPH;
-  const ipl = sweph[planet];
+  const ipl = sweph.constants[planet];
 
   if (!ipl) {
     return res.status(400).json({ error: 'Invalid planet name' });
