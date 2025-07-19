@@ -1,9 +1,11 @@
 import express from 'express';
+import cors from 'cors';
 import sweph from './index.mjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const app = express();
+app.use(cors());
 const port = process.env.PORT || 3000;
 app.use(express.json());
 
