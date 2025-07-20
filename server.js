@@ -116,7 +116,7 @@ app.post('/chart', (req, res) => {
 
   const planetPositions = {};
 
-  for (const [name, code] of Object.entries(planets)) {
+for (const [name, code] of Object.entries(planets)) {
   const ipl = sweph.constants?.[code];
 
   if (typeof ipl !== 'number') {
@@ -146,18 +146,18 @@ app.post('/chart', (req, res) => {
   }
 }
 
-  const houseData = sweph.houses(jd, latitude, longitude, 'P');
-  const cusps = houseData.house;
-  const asc = cusps[0];
-  const mc = cusps[9];
+// ✅ Calcolo delle case e risposta finale – UNA SOLA VOLTA
+const houseData = sweph.houses(jd, latitude, longitude, 'P');
+const cusps = houseData.house;
+const asc = cusps[0];
+const mc = cusps[9];
 
-  res.json({
-    jd,
-    planets: planetPositions,
-    houses: cusps,
-    ascendant: asc,
-    mediumCoeli: mc
-  });
+res.json({
+  jd,
+  planets: planetPositions,
+  houses: cusps,
+  ascendant: asc,
+  mediumCoeli: mc
 });
 
 app.listen(port, () => {
