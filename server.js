@@ -125,19 +125,16 @@ for (const [name, code] of Object.entries(planets)) {
     continue;
   }
 
-  const result = sweph.calc_ut(jd, ipl, flag);
-
-  if (!result || typeof result.rc !== 'number' || result.rc < 0) {
-    console.error(`❌ Errore nel risultato per ${name}:`, result);
-    continue;
+  let position;
+try {
+  position = sweph.calc_ut(jd, ipl, flag); // restituisce direttamente un array
+  if (!Array.isArray(position) || typeof position[0] !== 'number') {
+    throw new Error('Risultato malformato');
   }
-
-  if (!Array.isArray(result.data) || typeof result.data[0] !== 'number') {
-    console.error(`❌ Posizione malformata per ${name}:`, result);
-    continue;
-  }
-
-  planetPositions[name] = result.data[0];
+  planetPositions[name] = position[0];
+} catch (err) {
+  console.error(`❌ Errore nel risultato per ${name}:`, err);
+  continue;
 }
 
   const houseData = sweph.houses(jd, latitude, longitude, 'P');
