@@ -117,25 +117,34 @@ app.post('/chart', (req, res) => {
   const planetPositions = {};
 
   for (const [name, code] of Object.entries(planets)) {
-    const ipl = sweph.constants?.[code];
+  const ipl = sweph.constants?.[code];
 
-    if (typeof ipl !== 'number') {
-      console.error(`❌ Costante non valida per ${name}:`, code);
-      continue;
-    }
-
-    let result;
-    try {
-      result = sweph.calc_ut(jd, ipl, flag);
-      if (!result || typeof result.rc !== 'number' || result.rc < 0 || !Array.isArray(result.data)) {
-        throw new Error('Risultato malformato');
-      }
-      planetPositions[name] = result.data[0];
-    } catch (err) {
-      console.error(`❌ Errore nel risultato per ${name}:`, err);
-      continue;
-    }
+  if (typeof ipl !== 'number') {
+    console.error(`❌ Costante non valida per ${name}:`, code);
+    continue;
   }
+
+  let result;
+  try {
+    result = sweph.calc_ut(jd, ipl, flag);
+
+    if (!result || typeof result.rc !== 'number' || result.rc < 0) {
+      throw new Error(`Errore nel risultato: ${JSON.stringify(result)}`);
+    }
+
+    const pos = Array.isArray(result.x) ? result.x[0] : result.data?.[0];
+
+    if (typeof pos !== 'number') {
+      throw new Error(`Posizione non valida: ${JSON.stringify(result)}`);
+    }
+
+    planetPositions[name] = pos;
+
+  } catch (err) {
+    console.error(`❌ Errore nel risultato per ${name}:`, err);
+    continue;
+  }
+}
 
   const houseData = sweph.houses(jd, latitude, longitude, 'P');
   const cusps = houseData.house;
