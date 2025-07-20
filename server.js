@@ -124,20 +124,26 @@ app.post('/chart', (req, res) => {
     continue;
   }
 
-  const result = sweph.calc_ut(jd, ipl, flag);
+    const result = sweph.calc_ut(jd, ipl, flag);
 
-if (
-  !result ||
-  typeof result.rc !== 'number' ||
-  result.rc < 0 ||
-  !Array.isArray(result.data) ||
-  typeof result.data[0] !== 'number'
-) {
-  console.error(`❌ Errore o risultato malformato per ${name}:`, result);
-  continue;
-}
+  if (
+    !result ||
+    typeof result.rc !== 'number' ||
+    result.rc < 0 ||
+    (!Array.isArray(result.x) && !Array.isArray(result.data))
+  ) {
+    console.error(`❌ Errore o risultato malformato per ${name}:`, result);
+    continue;
+  }
 
-planetPositions[name] = result.data[0];
+  const posArray = Array.isArray(result.x) ? result.x : result.data;
+
+  if (typeof posArray[0] !== 'number') {
+    console.error(`❌ Primo elemento non numerico per ${name}:`, posArray);
+    continue;
+  }
+
+  planetPositions[name] = posArray[0];
 
 }
 
