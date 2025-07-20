@@ -117,34 +117,34 @@ app.post('/chart', (req, res) => {
 
   const planetPositions = {};
 
-  for (const [name, code] of Object.entries(planets)) {
+ for (const [name, code] of Object.entries(planets)) {
   const ipl = sweph.constants?.[code];
+
   if (typeof ipl !== 'number') {
     console.error(`❌ Costante non valida per ${name}:`, code);
     continue;
   }
 
-    const result = sweph.calc_ut(jd, ipl, flag);
+  const result = sweph.calc_ut(jd, ipl, flag);
 
-  if (
-    !result ||
-    typeof result.rc !== 'number' ||
-    result.rc < 0 ||
-    (!Array.isArray(result.x) && !Array.isArray(result.data))
-  ) {
-    console.error(`❌ Errore o risultato malformato per ${name}:`, result);
+  if (!result || typeof result !== 'object') {
+    console.error(`❌ Nessun risultato per ${name}:`, result);
+    continue;
+  }
+
+  if (typeof result.rc !== 'number' || result.rc < 0) {
+    console.error(`❌ Errore nel risultato per ${name}:`, result);
     continue;
   }
 
   const posArray = Array.isArray(result.x) ? result.x : result.data;
 
-  if (typeof posArray[0] !== 'number') {
-    console.error(`❌ Primo elemento non numerico per ${name}:`, posArray);
+  if (!Array.isArray(posArray) || typeof posArray[0] !== 'number') {
+    console.error(`❌ Posizione malformata per ${name}:`, result);
     continue;
   }
 
   planetPositions[name] = posArray[0];
-
 }
 
   const houseData = sweph.houses(jd, latitude, longitude, 'P');
