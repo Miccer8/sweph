@@ -128,9 +128,9 @@ for (const [name, code] of Object.entries(planets)) {
   try {
     result = sweph.calc_ut(jd, ipl, flag);
 
-    if (!result || typeof result.rc !== 'number' || result.rc < 0) {
-      throw new Error(`Errore nel risultato: ${JSON.stringify(result)}`);
-    }
+    if (!result || !Array.isArray(result.data) || typeof result.data[0] !== 'number') {
+  throw new Error(`Risultato malformato o mancante: ${JSON.stringify(result)}`);
+}
 
     const pos = Array.isArray(result.data) ? result.data[0] : undefined;
 
