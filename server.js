@@ -3,6 +3,7 @@ import cors from 'cors';
 import sweph from './index.mjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { parseISO, isValid, addHours, formatISO } from 'date-fns';
 
 const app = express();
 app.use(cors());
@@ -182,6 +183,81 @@ app.post('/chart', (req, res) => {
     mediumCoeli: mc
   });
 });
+
+// 🔭 TRANSITI A INTERVALLI: /range-transits
+
+const PLANETS_RANGE = {
+  Sun: sweph.constants.SE_SUN,
+  Moon: sweph.constants.SE_MOON,
+  Mercury: sweph.constants.SE_MERCURY,
+  Venus: sweph.constants.SE_VENUS,
+  Mars: sweph.constants.SE_MARS,
+  Jupiter: sweph.constants.SE_JUPITER,
+  Saturn: sweph.constants.SE_SATURN,
+  Uranus: sweph.constants.SE_URANUS,
+  Neptune: sweph.constants.SE_NEPTUNE,
+  Pluto: sweph.constants.SE_PLUTO,
+  TrueNode: sweph.constants.SE_TRUE_NODE,
+  Lilith: sweph.constants.SE_MEAN_APOG,
+  Chiron: sweph.constants.SE_CHIRON,
+};
+
+async function getTransitsInRange(startDate, endDate, stepHours) {
+  const start = parseISO(startDate);
+  const end = parseISO(endDate);
+  if (!isValid(start) || !isValid(end) || isNaN(stepHours) || stepHours <= 0) {
+    throw new Error('Input non valido: date ISO e stepHours > 0 richiesti.');
+  }
+
+  const flag = sweph.constants.SEFLG_SWIEPH;
+  const results = [];
+  let current = start;
+
+  while (current <= end) {
+    const year = current.getUTCFullYear();
+    const month = current.getUTCMonth() + 1;
+    const day = current.getUTCDate();
+    const hour = current.getUTCHours() + current.getUTCMinutes() / 60;
+
+    const jd = sweph.julday(year, month, day, hour, 1);
+    const positions = {};
+
+    for (const [name, code] of Object.entries(PLANETS_RANGE)) {
+      try {
+        const result = sweph.calc_ut(jd, code, flag);
+
+        if (!result || typeof result.lon !== 'number') {
+          throw new Error(`Dati non validi per ${name}`);
+        }
+
+        positions[name] = { lon: parseFloat(result.lon.toFixed(2)) };
+      } catch (err) {
+        positions[name] = { error: err.message || 'Errore sconosciuto' };
+      }
+    }
+
+    results.push({
+      date: formatISO(current),
+      positions,
+    });
+
+    current = addHours(current, stepHours);
+  }
+
+  return results;
+}
+
+app.get('/range-transits', async (req, res) => {
+  const { startDate, endDate, stepHours } = req.query;
+
+  try {
+    const data = await getTransitsInRange(startDate, endDate, parseInt(stepHours));
+    res.json({ ok: true, data });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
 
 app.listen(port, () => {
   console.log(`✅ Server running on port ${port}`);
