@@ -1,4 +1,4 @@
-# WORK IN PROGRESS!
+# WORK IN PROGRESS ON ALL THIS REPOSITORY!
 # Sweph
 
 The definitive Swiss Ephemeris bindings for Node.js  
