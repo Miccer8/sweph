@@ -147,10 +147,21 @@ for (const [name, code] of Object.entries(planets)) {
 }
 
 // ✅ Calcolo delle case e risposta finale – UNA SOLA VOLTA
-const houseData = sweph.houses(jd, latitude, longitude, 'P');
+let houseData;
+try {
+  houseData = sweph.houses(jd, latitude, longitude, 'P');
+  if (!houseData || !Array.isArray(houseData.house)) {
+    throw new Error('houseData.house è undefined o non è un array');
+  }
+} catch (err) {
+  console.error("❌ Errore nel calcolo delle case:", err);
+  return res.status(500).json({ error: "Errore nel calcolo delle case astrologiche" });
+}
+
 const cusps = houseData.house;
 const asc = cusps[0];
 const mc = cusps[9];
+
 
 res.json({
   jd,
