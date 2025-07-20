@@ -38,9 +38,9 @@ app.get('/transit', (req, res) => {
 
   const ipl = sweph.constants?.[planet];
 
-if (ipl === undefined) {
-  return res.status(400).json({ error: `Invalid planet name: ${planet}` });
-}
+  if (ipl === undefined) {
+    return res.status(400).json({ error: `Invalid planet name: ${planet}` });
+  }
 
   const flag = sweph.constants.SEFLG_SWIEPH;
 
@@ -116,61 +116,73 @@ app.post('/chart', (req, res) => {
 
   const planetPositions = {};
 
-for (const [name, code] of Object.entries(planets)) {
-  const ipl = sweph.constants?.[code];
+  for (const [name, code] of Object.entries(planets)) {
+    const ipl = sweph.constants?.[code];
 
-  if (typeof ipl !== 'number') {
-    console.error(`❌ Costante non valida per ${name}:`, code);
-    continue;
-  }
-
-  let result;
-  try {
-    result = sweph.calc_ut(jd, ipl, flag);
-
-    if (!result || !Array.isArray(result.data) || typeof result.data[0] !== 'number') {
-  throw new Error(`Risultato malformato o mancante: ${JSON.stringify(result)}`);
-}
-
-    const pos = Array.isArray(result.data) ? result.data[0] : undefined;
-
-    if (typeof pos !== 'number') {
-      throw new Error(`Posizione non valida: ${JSON.stringify(result)}`);
+    if (typeof ipl !== 'number') {
+      console.error(`❌ Costante non valida per ${name}:`, code);
+      continue;
     }
 
-    planetPositions[name] = pos;
+    let result;
+    try {
+      result = sweph.calc_ut(jd, ipl, flag);
 
+      // Controllo del flag
+      if (result.flag < 0) {
+        throw new Error(`Errore nel calcolo per ${name}: flag=${result.flag}`);
+      }
+
+      if (!result || !Array.isArray(result.data) || typeof result.data[0] !== 'number') {
+        throw new Error(`Risultato malformato o mancante: ${JSON.stringify(result)}`);
+      }
+
+      const pos = Array.isArray(result.data) ? result.data[0] : undefined;
+
+      if (typeof pos !== 'number') {
+        throw new Error(`Posizione non valida: ${JSON.stringify(result)}`);
+      }
+
+      planetPositions[name] = pos;
+
+    } catch (err) {
+      console.error(`❌ Errore nel risultato per ${name}:`, err);
+      continue;
+    }
+  }
+
+  // ✅ Calcolo delle case e risposta finale – UNA SOLA VOLTA
+  let houseData;
+  try {
+    houseData = sweph.houses(jd, latitude, longitude, 'P');
+
+    // Controllo del flag di successo
+    if (houseData.flag !== sweph.constants.OK) {
+      throw new Error(`Errore nel calcolo delle case: flag=${houseData.flag}`);
+    }
+
+    if (!houseData || !houseData.data || !Array.isArray(houseData.data.houses)) {
+      throw new Error('houseData.data.houses è undefined o non è un array');
+    }
   } catch (err) {
-    console.error(`❌ Errore nel risultato per ${name}:`, err);
-    continue;
+    console.error("❌ Errore nel calcolo delle case:", err);
+    return res.status(500).json({ error: "Errore nel calcolo delle case astrologiche" });
   }
-}
 
-// ✅ Calcolo delle case e risposta finale – UNA SOLA VOLTA
-let houseData;
-try {
-  houseData = sweph.houses(jd, latitude, longitude, 'P');
-  if (!houseData || !Array.isArray(houseData.cusp)) {
-    throw new Error('houseData.cusp è undefined o non è un array');
-  }
-} catch (err) {
-  console.error("❌ Errore nel calcolo delle case:", err);
-  return res.status(500).json({ error: "Errore nel calcolo delle case astrologiche" });
-}
+  const cusps = houseData.data.houses;
+  const asc = cusps[0];
+  const mc = cusps[9];
 
-const cusps = houseData.cusp;
-const asc = houseData.ascmc?.[0]; // ASC
-const mc = houseData.ascmc?.[1];  // MC
 
-res.json({
-  jd,
-  planets: planetPositions,
-  houses: cusps,
-  ascendant: asc,
-  mediumCoeli: mc
+  res.json({
+    jd,
+    planets: planetPositions,
+    houses: cusps,
+    ascendant: asc,
+    mediumCoeli: mc
   });
 });
-  
+
 app.listen(port, () => {
   console.log(`✅ Server running on port ${port}`);
 });
