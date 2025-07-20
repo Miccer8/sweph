@@ -132,7 +132,7 @@ app.post('/chart', (req, res) => {
       throw new Error(`Errore nel risultato: ${JSON.stringify(result)}`);
     }
 
-    const pos = Array.isArray(result.x) ? result.x[0] : result.data?.[0];
+    const pos = Array.isArray(result.data) ? result.data[0] : undefined;
 
     if (typeof pos !== 'number') {
       throw new Error(`Posizione non valida: ${JSON.stringify(result)}`);
