@@ -124,13 +124,13 @@ app.post('/chart', (req, res) => {
       continue;
     }
 
-    let position;
+    let result;
     try {
-      position = sweph.calc_ut(jd, ipl, flag); // restituisce direttamente un array
-      if (!Array.isArray(position) || typeof position[0] !== 'number') {
+      result = sweph.calc_ut(jd, ipl, flag);
+      if (!result || typeof result.rc !== 'number' || result.rc < 0 || !Array.isArray(result.data)) {
         throw new Error('Risultato malformato');
       }
-      planetPositions[name] = position[0];
+      planetPositions[name] = result.data[0];
     } catch (err) {
       console.error(`❌ Errore nel risultato per ${name}:`, err);
       continue;
