@@ -98,7 +98,6 @@ app.post('/chart', (req, res) => {
   const flag = sweph.constants.SEFLG_SWIEPH;
   console.log("🧪 FLAG VALUE:", flag);
 
-
   const planets = {
     Sole: 'SE_SUN',
     Luna: 'SE_MOON',
@@ -115,27 +114,28 @@ app.post('/chart', (req, res) => {
     Lilith: 'SE_MEAN_APOG'
   };
 
- const planetPositions = {};
+  const planetPositions = {};
 
-for (const [name, code] of Object.entries(planets)) {
-  const ipl = sweph.constants?.[code];
+  for (const [name, code] of Object.entries(planets)) {
+    const ipl = sweph.constants?.[code];
 
-  if (typeof ipl !== 'number') {
-    console.error(`❌ Costante non valida per ${name}:`, code);
-    continue;
+    if (typeof ipl !== 'number') {
+      console.error(`❌ Costante non valida per ${name}:`, code);
+      continue;
+    }
+
+    let position;
+    try {
+      position = sweph.calc_ut(jd, ipl, flag); // restituisce direttamente un array
+      if (!Array.isArray(position) || typeof position[0] !== 'number') {
+        throw new Error('Risultato malformato');
+      }
+      planetPositions[name] = position[0];
+    } catch (err) {
+      console.error(`❌ Errore nel risultato per ${name}:`, err);
+      continue;
+    }
   }
-
-  let position;
-try {
-  position = sweph.calc_ut(jd, ipl, flag); // restituisce direttamente un array
-  if (!Array.isArray(position) || typeof position[0] !== 'number') {
-    throw new Error('Risultato malformato');
-  }
-  planetPositions[name] = position[0];
-} catch (err) {
-  console.error(`❌ Errore nel risultato per ${name}:`, err);
-  continue;
-}
 
   const houseData = sweph.houses(jd, latitude, longitude, 'P');
   const cusps = houseData.house;
