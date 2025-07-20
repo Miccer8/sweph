@@ -115,9 +115,9 @@ app.post('/chart', (req, res) => {
     Lilith: 'SE_MEAN_APOG'
   };
 
-  const planetPositions = {};
+ const planetPositions = {};
 
- for (const [name, code] of Object.entries(planets)) {
+for (const [name, code] of Object.entries(planets)) {
   const ipl = sweph.constants?.[code];
 
   if (typeof ipl !== 'number') {
@@ -127,24 +127,17 @@ app.post('/chart', (req, res) => {
 
   const result = sweph.calc_ut(jd, ipl, flag);
 
-  if (!result || typeof result !== 'object') {
-    console.error(`❌ Nessun risultato per ${name}:`, result);
-    continue;
-  }
-
-  if (typeof result.rc !== 'number' || result.rc < 0) {
+  if (!result || typeof result.rc !== 'number' || result.rc < 0) {
     console.error(`❌ Errore nel risultato per ${name}:`, result);
     continue;
   }
 
-  const posArray = Array.isArray(result.x) ? result.x : result.data;
-
-  if (!Array.isArray(posArray) || typeof posArray[0] !== 'number') {
+  if (!Array.isArray(result.data) || typeof result.data[0] !== 'number') {
     console.error(`❌ Posizione malformata per ${name}:`, result);
     continue;
   }
 
-  planetPositions[name] = posArray[0];
+  planetPositions[name] = result.data[0];
 }
 
   const houseData = sweph.houses(jd, latitude, longitude, 'P');
