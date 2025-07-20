@@ -3,7 +3,6 @@ import cors from 'cors';
 import sweph from './index.mjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { parseISO, isValid, addHours, formatISO } from 'date-fns';
 
 const app = express();
 app.use(cors());
@@ -202,16 +201,21 @@ const PLANETS_RANGE = {
   Chiron: sweph.constants.SE_CHIRON,
 };
 
-async function getTransitsInRange(startDate, endDate, stepHours) {
-  const start = parseISO(startDate);
-  const end = parseISO(endDate);
-  if (!isValid(start) || !isValid(end) || isNaN(stepHours) || stepHours <= 0) {
+function formatToISOString(date) {
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().replace('.000Z', 'Z');
+}
+
+async function getTransitsInRange(startDateStr, endDateStr, stepHours) {
+  const start = new Date(startDateStr);
+  const end = new Date(endDateStr);
+
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || isNaN(stepHours) || stepHours <= 0) {
     throw new Error('Input non valido: date ISO e stepHours > 0 richiesti.');
   }
 
-  const flag = sweph.constants.SEFLG_SWIEPH;
   const results = [];
-  let current = start;
+  const flag = sweph.constants.SEFLG_SWIEPH;
+  let current = new Date(start);
 
   while (current <= end) {
     const year = current.getUTCFullYear();
@@ -225,11 +229,9 @@ async function getTransitsInRange(startDate, endDate, stepHours) {
     for (const [name, code] of Object.entries(PLANETS_RANGE)) {
       try {
         const result = sweph.calc_ut(jd, code, flag);
-
         if (!result || typeof result.lon !== 'number') {
           throw new Error(`Dati non validi per ${name}`);
         }
-
         positions[name] = { lon: parseFloat(result.lon.toFixed(2)) };
       } catch (err) {
         positions[name] = { error: err.message || 'Errore sconosciuto' };
@@ -237,11 +239,11 @@ async function getTransitsInRange(startDate, endDate, stepHours) {
     }
 
     results.push({
-      date: formatISO(current),
+      date: formatToISOString(current),
       positions,
     });
 
-    current = addHours(current, stepHours);
+    current = new Date(current.getTime() + stepHours * 60 * 60 * 1000); // add hours
   }
 
   return results;
