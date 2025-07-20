@@ -252,6 +252,8 @@ async function getTransitsInRange(startDateStr, endDateStr, stepHours) {
 app.get('/range-transits', async (req, res) => {
   const { startDate, endDate, stepHours } = req.query;
 
+  console.log('➡️ QUERY PARAMS:', { startDate, endDate, stepHours });
+
   try {
     const data = await getTransitsInRange(startDate, endDate, parseInt(stepHours));
     res.json({ ok: true, data });
@@ -259,6 +261,7 @@ app.get('/range-transits', async (req, res) => {
     res.status(400).json({ ok: false, error: error.message });
   }
 });
+
 
 
 app.listen(port, () => {
