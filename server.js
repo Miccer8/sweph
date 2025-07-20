@@ -205,16 +205,16 @@ function formatToISOString(date) {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().replace('.000Z', 'Z');
 }
 
-async function getTransitsInRange(startDateStr, endDateStr, stepHours) {
-  const start = new Date(startDateStr);
-  const end = new Date(endDateStr);
+async function getTransitsInRange(startDate, endDate, stepHours) {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
 
-  if (isNaN(start.getTime()) || isNaN(end.getTime()) || isNaN(stepHours) || stepHours <= 0) {
+  if (isNaN(start) || isNaN(end) || isNaN(stepHours) || stepHours <= 0) {
     throw new Error('Input non valido: date ISO e stepHours > 0 richiesti.');
   }
 
-  const results = [];
   const flag = sweph.constants.SEFLG_SWIEPH;
+  const results = [];
   let current = new Date(start);
 
   while (current <= end) {
@@ -229,21 +229,23 @@ async function getTransitsInRange(startDateStr, endDateStr, stepHours) {
     for (const [name, code] of Object.entries(PLANETS_RANGE)) {
       try {
         const result = sweph.calc_ut(jd, code, flag);
-        if (!result || typeof result.lon !== 'number') {
+
+        if (!result || !Array.isArray(result.data) || typeof result.data[0] !== 'number') {
           throw new Error(`Dati non validi per ${name}`);
         }
-        positions[name] = { lon: parseFloat(result.lon.toFixed(2)) };
+
+        positions[name] = { lon: parseFloat(result.data[0].toFixed(2)) };
       } catch (err) {
         positions[name] = { error: err.message || 'Errore sconosciuto' };
       }
     }
 
     results.push({
-      date: formatToISOString(current),
+      date: current.toISOString(),
       positions,
     });
 
-    current = new Date(current.getTime() + stepHours * 60 * 60 * 1000); // add hours
+    current = new Date(current.getTime() + stepHours * 60 * 60 * 1000);
   }
 
   return results;
