@@ -3,6 +3,14 @@ import cors from 'cors';
 import sweph from './index.mjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import {
+  getZodiacSign,
+  getPlanetInHouse,
+  calculateAspects,
+  getHouseNames,
+  generateMonthlyTable,
+  calculateMonthlyTransits
+} from './astro-utils.js';
 
 const app = express();
 app.use(cors());
@@ -261,6 +269,349 @@ app.get('/range-transits', async (req, res) => {
     res.json({ ok: true, data });
   } catch (error) {
     res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
+// 🌟 NUOVO ENDPOINT: /tema-natale - Calcolo completo tema natale
+app.post('/tema-natale', (req, res) => {
+  const { datetime, latitude, longitude, timezone = 0 } = req.body;
+
+  if (!datetime || latitude === undefined || longitude === undefined) {
+    return res.status(400).json({
+      error: 'Parametri richiesti: datetime (es. "2025-02-14T10:30:00"), latitude, longitude'
+    });
+  }
+
+  const date = new Date(datetime);
+  const jd = sweph.julday(
+    date.getUTCFullYear(),
+    date.getUTCMonth() + 1,
+    date.getUTCDate(),
+    date.getUTCHours() + date.getUTCMinutes() / 60,
+    1
+  );
+
+  const flag = sweph.constants.SEFLG_SWIEPH;
+
+  // Pianeti da calcolare
+  const planets = {
+    'Sole': 'SE_SUN',
+    'Luna': 'SE_MOON',
+    'Mercurio': 'SE_MERCURY',
+    'Venere': 'SE_VENUS',
+    'Marte': 'SE_MARS',
+    'Giove': 'SE_JUPITER',
+    'Saturno': 'SE_SATURN',
+    'Urano': 'SE_URANUS',
+    'Nettuno': 'SE_NEPTUNE',
+    'Plutone': 'SE_PLUTO',
+    'Chirone': 'SE_CHIRON',
+    'Nodo Nord': 'SE_TRUE_NODE',
+    'Lilith': 'SE_MEAN_APOG'
+  };
+
+  const planetaryData = {};
+
+  // Calcolo case astrologiche
+  let houseData;
+  try {
+    houseData = sweph.houses(jd, latitude, longitude, 'P'); // Sistema Placidus
+
+    if (houseData.flag !== sweph.constants.OK) {
+      throw new Error(`Errore nel calcolo delle case: flag=${houseData.flag}`);
+    }
+  } catch (err) {
+    return res.status(500).json({ error: "Errore nel calcolo delle case astrologiche: " + err.message });
+  }
+
+  const houseCusps = houseData.data.houses;
+  const houseInfo = {};
+
+  // Informazioni sulle case
+  for (let i = 0; i < 12; i++) {
+    const houseNumber = i + 1;
+    const zodiacInfo = getZodiacSign(houseCusps[i]);
+    houseInfo[houseNumber] = {
+      cusp: houseCusps[i].toFixed(2),
+      zodiac: zodiacInfo,
+      name: getHouseNames()[houseNumber]
+    };
+  }
+
+  // Calcolo posizioni planetarie
+  for (const [planetName, planetCode] of Object.entries(planets)) {
+    const ipl = sweph.constants?.[planetCode];
+
+    if (typeof ipl !== 'number') {
+      console.error(`❌ Costante non valida per ${planetName}:`, planetCode);
+      continue;
+    }
+
+    try {
+      const result = sweph.calc_ut(jd, ipl, flag);
+
+      if (result.flag < 0 || !result || !Array.isArray(result.data) || typeof result.data[0] !== 'number') {
+        continue;
+      }
+
+      const longitude = result.data[0];
+      const zodiacInfo = getZodiacSign(longitude);
+      const house = getPlanetInHouse(longitude, houseCusps);
+
+      planetaryData[planetName] = {
+        longitude: longitude.toFixed(2),
+        zodiac: zodiacInfo,
+        house: house,
+        houseName: getHouseNames()[house]
+      };
+
+    } catch (err) {
+      console.error(`❌ Errore nel calcolo per ${planetName}:`, err);
+      continue;
+    }
+  }
+
+  // Calcolo aspetti tra tutti i pianeti
+  const aspects = [];
+  const planetNames = Object.keys(planetaryData);
+
+  for (let i = 0; i < planetNames.length; i++) {
+    for (let j = i + 1; j < planetNames.length; j++) {
+      const planet1 = planetNames[i];
+      const planet2 = planetNames[j];
+      const pos1 = parseFloat(planetaryData[planet1].longitude);
+      const pos2 = parseFloat(planetaryData[planet2].longitude);
+
+      const planetAspects = calculateAspects(pos1, pos2);
+
+      if (planetAspects.length > 0) {
+        aspects.push({
+          planet1,
+          planet2,
+          aspects: planetAspects
+        });
+      }
+    }
+  }
+
+  res.json({
+    inputData: {
+      datetime,
+      latitude,
+      longitude,
+      jd: jd.toFixed(6)
+    },
+    pianeti: planetaryData,
+    case: houseInfo,
+    ascendente: {
+      longitude: houseCusps[0].toFixed(2),
+      zodiac: getZodiacSign(houseCusps[0])
+    },
+    medioCoeli: {
+      longitude: houseCusps[9].toFixed(2),
+      zodiac: getZodiacSign(houseCusps[9])
+    },
+    aspetti: aspects
+  });
+});
+
+// 🔮 NUOVO ENDPOINT: /transiti-mensili - Transiti planetari tabella mensile
+app.get('/transiti-mensili', async (req, res) => {
+  const { startDate = '2025-07-01', endDate = '2026-06-30' } = req.query;
+
+  try {
+    const monthlyTable = generateMonthlyTable(startDate, endDate);
+
+    const planets = {
+      'Sole': 'SE_SUN',
+      'Luna': 'SE_MOON',
+      'Mercurio': 'SE_MERCURY',
+      'Venere': 'SE_VENUS',
+      'Marte': 'SE_MARS',
+      'Giove': 'SE_JUPITER',
+      'Saturno': 'SE_SATURN',
+      'Urano': 'SE_URANUS',
+      'Nettuno': 'SE_NEPTUNE',
+      'Plutone': 'SE_PLUTO'
+    };
+
+    const transitData = {};
+
+    for (const monthInfo of monthlyTable) {
+      const monthKey = `${monthInfo.monthName} ${monthInfo.year}`;
+      transitData[monthKey] = await calculateMonthlyTransits(
+        monthInfo.year,
+        monthInfo.month,
+        planets,
+        sweph
+      );
+    }
+
+    res.json({
+      periodo: `${startDate} - ${endDate}`,
+      transiti: transitData
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 🎯 NUOVO ENDPOINT: /transiti-specifici - Transiti futuri per data specifica
+app.post('/transiti-specifici', async (req, res) => {
+  const { targetDate, natalData } = req.body;
+
+  if (!targetDate) {
+    return res.status(400).json({ error: 'targetDate richiesta (es. "2025-12-25")' });
+  }
+
+  const date = new Date(targetDate);
+  const jd = sweph.julday(
+    date.getUTCFullYear(),
+    date.getUTCMonth() + 1,
+    date.getUTCDate(),
+    12, // Mezzogiorno
+    1
+  );
+
+  const flag = sweph.constants.SEFLG_SWIEPH;
+
+  const planets = {
+    'Sole': 'SE_SUN',
+    'Luna': 'SE_MOON',
+    'Mercurio': 'SE_MERCURY',
+    'Venere': 'SE_VENUS',
+    'Marte': 'SE_MARS',
+    'Giove': 'SE_JUPITER',
+    'Saturno': 'SE_SATURN',
+    'Urano': 'SE_URANUS',
+    'Nettuno': 'SE_NEPTUNE',
+    'Plutone': 'SE_PLUTO'
+  };
+
+  const transitPositions = {};
+  const transitAspects = [];
+
+  // Calcola posizioni dei transiti
+  for (const [planetName, planetCode] of Object.entries(planets)) {
+    try {
+      const result = sweph.calc_ut(jd, sweph.constants[planetCode], flag);
+
+      if (result.data && result.data[0] !== undefined) {
+        const longitude = result.data[0];
+        const zodiacInfo = getZodiacSign(longitude);
+
+        transitPositions[planetName] = {
+          longitude: longitude.toFixed(2),
+          zodiac: zodiacInfo
+        };
+      }
+    } catch (error) {
+      transitPositions[planetName] = { error: error.message };
+    }
+  }
+
+  // Se forniti dati natali, calcola aspetti di transito
+  if (natalData && natalData.pianeti) {
+    for (const [transitPlanet, transitPos] of Object.entries(transitPositions)) {
+      if (transitPos.longitude) {
+        for (const [natalPlanet, natalPos] of Object.entries(natalData.pianeti)) {
+          if (natalPos.longitude) {
+            const aspects = calculateAspects(
+              parseFloat(transitPos.longitude),
+              parseFloat(natalPos.longitude)
+            );
+
+            if (aspects.length > 0) {
+              transitAspects.push({
+                transitPlanet,
+                natalPlanet,
+                aspects
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+
+  res.json({
+    data: targetDate,
+    jd: jd.toFixed(6),
+    posizioniTransiti: transitPositions,
+    aspettiDiTransito: transitAspects
+  });
+});
+
+// 📊 NUOVO ENDPOINT: /tabella-anno - Tabella completa anno astrologico
+app.get('/tabella-anno', async (req, res) => {
+  const { year = 2025 } = req.query;
+
+  const startDate = `${year}-07-01`; // Luglio anno corrente
+  const endDate = `${parseInt(year) + 1}-06-30`; // Giugno anno successivo
+
+  try {
+    const monthlyTable = generateMonthlyTable(startDate, endDate);
+
+    // Pianeti principali per la tabella
+    const planets = {
+      'Sol': 'SE_SUN',
+      'Lun': 'SE_MOON',
+      'Mer': 'SE_MERCURY',
+      'Ven': 'SE_VENUS',
+      'Mar': 'SE_MARS',
+      'Gio': 'SE_JUPITER',
+      'Sat': 'SE_SATURN',
+      'Ura': 'SE_URANUS',
+      'Net': 'SE_NEPTUNE',
+      'Plu': 'SE_PLUTO'
+    };
+
+    const yearlyData = [];
+
+    for (const monthInfo of monthlyTable) {
+      const monthData = {
+        mese: monthInfo.monthName,
+        anno: monthInfo.year,
+        pianeti: {}
+      };
+
+      // Calcola posizione al 15 del mese
+      const midMonth = new Date(monthInfo.year, monthInfo.month - 1, 15);
+      const jd = sweph.julday(
+        midMonth.getUTCFullYear(),
+        midMonth.getUTCMonth() + 1,
+        midMonth.getUTCDate(),
+        12,
+        1
+      );
+
+      const flag = sweph.constants.SEFLG_SWIEPH;
+
+      for (const [planetName, planetCode] of Object.entries(planets)) {
+        try {
+          const result = sweph.calc_ut(jd, sweph.constants[planetCode], flag);
+
+          if (result.data && result.data[0] !== undefined) {
+            const zodiacInfo = getZodiacSign(result.data[0]);
+            monthData.pianeti[planetName] = `${zodiacInfo.degree}° ${zodiacInfo.sign}`;
+          }
+        } catch (error) {
+          monthData.pianeti[planetName] = 'Errore';
+        }
+      }
+
+      yearlyData.push(monthData);
+    }
+
+    res.json({
+      annoAstrologico: `${year}-${parseInt(year) + 1}`,
+      periodo: `Luglio ${year} - Giugno ${parseInt(year) + 1}`,
+      tabellaRiepilogativa: yearlyData
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
