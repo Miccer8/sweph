@@ -432,7 +432,10 @@ app.get('/transiti-mensili', async (req, res) => {
       'Saturno': 'SE_SATURN',
       'Urano': 'SE_URANUS',
       'Nettuno': 'SE_NEPTUNE',
-      'Plutone': 'SE_PLUTO'
+      'Plutone': 'SE_PLUTO',
+      'Chirone': 'SE_CHIRON',
+      'Nodo Nord': 'SE_TRUE_NODE',
+      'Lilith': 'SE_MEAN_APOG'
     };
 
     const transitData = {};
@@ -486,7 +489,10 @@ app.post('/transiti-specifici', async (req, res) => {
     'Saturno': 'SE_SATURN',
     'Urano': 'SE_URANUS',
     'Nettuno': 'SE_NEPTUNE',
-    'Plutone': 'SE_PLUTO'
+    'Plutone': 'SE_PLUTO',
+    'Chirone': 'SE_CHIRON',
+    'Nodo Nord': 'SE_TRUE_NODE',
+    'Lilith': 'SE_MEAN_APOG'
   };
 
   const transitPositions = {};
@@ -564,7 +570,10 @@ app.get('/tabella-anno', async (req, res) => {
       'Sat': 'SE_SATURN',
       'Ura': 'SE_URANUS',
       'Net': 'SE_NEPTUNE',
-      'Plu': 'SE_PLUTO'
+      'Plu': 'SE_PLUTO',
+      'Chi': 'SE_CHIRON',
+      'NN': 'SE_TRUE_NODE',
+      'Lil': 'SE_MEAN_APOG'
     };
 
     const yearlyData = [];
